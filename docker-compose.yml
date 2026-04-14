@@ -1,19 +1,25 @@
-services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: credixo
-      POSTGRES_PASSWORD: credixo
-      POSTGRES_DB: credixo_db
-    ports:
-      - "5432:5432"
+# services:
+#   db:
+#     image: postgres:15
+#     environment:
+#       POSTGRES_USER: credixo
+#       POSTGRES_PASSWORD: credixo
+#       POSTGRES_DB: credixo_db
+#     ports:
+#       - "5432:5432"
 
+services:
   backend:
     build: 
-      context: ./backend
+      context: ./
+      dockerfile: backend/Dockerfile
+    volumes:
+      - ./models:/models
     ports:
       - "8000:8000"
-    depends_on:
-      - db
-    environment:
-      DATABASE_URL: postgresql://credixo:credixo@db:5432/credixo_db
+    # depends_on:
+    #   - db
+    env_file:
+      - backend/.env
+    # environment:
+    #   DATABASE_URL: postgresql://credixo:credixo@db:5432/credixo_db

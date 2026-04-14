@@ -20,7 +20,7 @@ class LoanApplication(Base):
     applicant_income = Column(Float)
     coapplicant_income = Column(Float)
     loan_amount = Column(Float)
-    loan_term_months = Column(Integer)
+    loan_term = Column(Integer)
     loan_purpose = Column(String)
     dependents = Column(Integer)
     area_type = Column(String)
@@ -28,12 +28,12 @@ class LoanApplication(Base):
     
     electricity_bill_avg = Column(Float, nullable=True)
     electricity_payment_regularity = Column(Float, nullable=True)
-    mobile_recharge_avg = Column(Float, nullable=True)
+    mobile_recharge_amount = Column(Float, nullable=True)
     mobile_recharge_frequency = Column(Float, nullable=True)
     utility_payment_consistency = Column(Float, nullable=True)
     prior_repayment_record = Column(Float, nullable=True)
     govt_socioeconomic_category = Column(String, nullable=True)
-    credit_category = Column(String)
+    credit_score_category = Column(String)
     
     # Engineered Proxy Features
     debt_to_income = Column(Float)

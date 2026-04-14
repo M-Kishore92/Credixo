@@ -2,13 +2,21 @@
 import os
 import pickle
 
-MODELS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "models")
+# Load models directory from env or use default
+MODELS_DIR = os.getenv("MODEL_DIR", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "models"))
 
 # Load models at module level
-with open(os.path.join(MODELS_DIR, "lr_decision.pkl"), "rb") as f:
-    lr_model = pickle.load(f)
-with open(os.path.join(MODELS_DIR, "xgb_decision.pkl"), "rb") as f:
-    xgb_model = pickle.load(f)
+if not os.path.exists(MODELS_DIR):
+    # Try a fallback to a directory 'models' in the current working directory
+    MODELS_DIR = os.path.join(os.getcwd(), "models")
+
+def load_pkl(filename):
+    path = os.path.join(MODELS_DIR, filename)
+    with open(path, "rb") as f:
+        return pickle.load(f)
+
+lr_model = load_pkl("lr_decision.pkl")
+xgb_model = load_pkl("xgb_decision.pkl")
 
 def run_decision_models(X_scaled):
     """

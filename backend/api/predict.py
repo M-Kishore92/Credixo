@@ -5,6 +5,7 @@ from typing import Optional, List, Dict
 from sqlalchemy.orm import Session
 import uuid
 import datetime
+import os
 
 from db.session import get_db
 from db.models import LoanApplication
@@ -36,19 +37,19 @@ class LoanApplicationInput(BaseModel):
 
     # Loan Details
     loan_amount: float
-    loan_term_months: int
+    loan_term: int
     loan_purpose: str
 
     # Behavioral Signals
     electricity_bill_avg: Optional[float] = None
     electricity_payment_regularity: Optional[float] = None
-    mobile_recharge_avg: Optional[float] = None
+    mobile_recharge_amount: Optional[float] = None
     mobile_recharge_frequency: Optional[float] = None
     utility_payment_consistency: Optional[float] = None
     govt_socioeconomic_category: Optional[str] = None
 
     # Credit History
-    credit_category: str = "None"
+    credit_score_category: str = "None"
     prior_repayment_record: Optional[float] = None
 
     # Tracking
@@ -116,29 +117,35 @@ async def predict_loan(input_data: LoanApplicationInput, db: Session = Depends(g
         
         risk_band = get_risk_band(acs_results["alternative_credit_score"])
         
-        # 10. Persist to Database
-        db_app = LoanApplication(
-            id=app_id,
-            **{k: v for k, v in raw_dict.items() if k != "data_sources_used"},
-            **engineered,
-            behavior_repayment_score=acs_results["behavior_repayment_score"],
-            income_affordability_score=acs_results["income_affordability_score"],
-            alternative_credit_score=acs_results["alternative_credit_score"],
-            risk_band=risk_band,
-            lr_score=decision_results["lr_score"],
-            xgb_score=decision_results["xgb_score"],
-            combined_score=decision_results["combined_score"],
-            ai_decision=ai_decision,
-            shap_values_json=explanation["shap_values"],
-            top_reason_1=explanation["top_reason_1"],
-            top_reason_2=explanation["top_reason_2"],
-            suggestions_json=suggestions,
-            fairness_flag=fairness["fairness_flag"],
-            fairness_detail=fairness["fairness_detail"],
-            data_sources_used=raw_dict.get("data_sources_used", {})
-        )
-        db.add(db_app)
-        db.commit()
+        # 10. Persist to Database (Optional)
+        if os.getenv("SKIP_DB_PERSISTENCE", "false").lower() != "true":
+            try:
+                db_app = LoanApplication(
+                    id=app_id,
+                    **{k: v for k, v in raw_dict.items() if k != "data_sources_used"},
+                    **engineered,
+                    behavior_repayment_score=acs_results["behavior_repayment_score"],
+                    income_affordability_score=acs_results["income_affordability_score"],
+                    alternative_credit_score=acs_results["alternative_credit_score"],
+                    risk_band=risk_band,
+                    lr_score=decision_results["lr_score"],
+                    xgb_score=decision_results["xgb_score"],
+                    combined_score=decision_results["combined_score"],
+                    ai_decision=ai_decision,
+                    shap_values_json=explanation["shap_values"],
+                    top_reason_1=explanation["top_reason_1"],
+                    top_reason_2=explanation["top_reason_2"],
+                    suggestions_json=suggestions,
+                    fairness_flag=fairness["fairness_flag"],
+                    fairness_detail=fairness["fairness_detail"],
+                    data_sources_used=raw_dict.get("data_sources_used", {})
+                )
+                db.add(db_app)
+                db.commit()
+            except Exception as db_err:
+                print(f"Database persistence failed: {db_err}")
+                # We continue since the user prioritized AI models over DB
+                db.rollback()
         
         # 11. Final Response
         return PredictResponse(

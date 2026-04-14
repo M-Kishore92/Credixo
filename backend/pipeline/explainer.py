@@ -3,7 +3,11 @@ import os
 import pickle
 import shap
 
-MODELS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "models")
+# Load models directory from env or use default
+MODELS_DIR = os.getenv("MODEL_DIR", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "models"))
+
+if not os.path.exists(MODELS_DIR):
+    MODELS_DIR = os.path.join(os.getcwd(), "models")
 
 # Load model and create explainer at load time
 with open(os.path.join(MODELS_DIR, "xgb_decision.pkl"), "rb") as f:
@@ -21,9 +25,9 @@ SHAP_REASON_MAP = {
     "prior_repayment_record": "No prior loan repayment history is available to verify repayment reliability.",
     "applicant_income": "Declared monthly income is below the threshold for this loan size.",
     "employment_stability": "Employment type carries higher income instability risk.",
-    "mobile_recharge_avg": "Mobile usage pattern suggests limited discretionary income.",
+    "mobile_recharge_amount": "Mobile usage pattern suggests limited discretionary income.",
     "coapplicant_income": "No co-applicant income declared to support repayment capacity.",
-    "credit_category": "Credit history category is insufficient for this loan amount.",
+    "credit_score_category": "Credit history category is insufficient for this loan amount.",
     "loan_amount": "The requested loan amount is high for the current financial profile.",
     "age": "Age profile impacts the long-term risk assessment for this loan term.",
     "education": "Education level is factored into long-term income stability projections.",
@@ -47,8 +51,8 @@ def explain_decision(X_scaled):
     
     # Feature names in order (matching preprocess.py)
     feature_names = [
-        'gender', 'marital_status', 'education', 'employment_type', 'area_type', 'loan_purpose', 'credit_category', 'govt_socioeconomic_category',
-        'age', 'applicant_income', 'coapplicant_income', 'loan_amount', 'loan_term_months', 'dependents', 'electricity_bill_avg', 'electricity_payment_regularity', 'mobile_recharge_avg', 'mobile_recharge_frequency', 'utility_payment_consistency', 'prior_repayment_record', 'alternative_credit_score'
+        'gender', 'marital_status', 'education', 'employment_type', 'area_type', 'loan_purpose', 'credit_score_category', 'govt_socioeconomic_category',
+        'age', 'applicant_income', 'coapplicant_income', 'loan_amount', 'loan_term', 'dependents', 'electricity_bill_avg', 'electricity_payment_regularity', 'mobile_recharge_amount', 'mobile_recharge_frequency', 'utility_payment_consistency', 'prior_repayment_record', 'alternative_credit_score'
     ]
     
     # Map feature names to SHAP values

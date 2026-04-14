@@ -7,11 +7,12 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir numpy<2.0
+RUN pip install --no-cache-dir "numpy<2.0"
 
-COPY . .
+COPY backend/ .
+COPY models/ /models/
 
 # Ensure models directory exists for container
 RUN mkdir -p /models

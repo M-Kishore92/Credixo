@@ -22,9 +22,9 @@ def normalize_behavioral_signals(data):
     
     # 3. Mobile Recharge Average Normalization
     # Rs. 300 is the national prepaid average
-    raw_mobile_avg = data.get("mobile_recharge_avg")
-    if raw_mobile_avg is not None:
-        norm_mobile_avg = min(3.0, raw_mobile_avg / 300)
+    raw_mobile_amount = data.get("mobile_recharge_amount")
+    if raw_mobile_amount is not None:
+        norm_mobile_avg = min(3.0, raw_mobile_amount / 300)
     else:
         norm_mobile_avg = None
         
@@ -49,7 +49,7 @@ def normalize_behavioral_signals(data):
         "electricity_bill_avg_norm": norm_elec,
         "electricity_payment_regularity": elec_reg,
         "elec_reg_missing": elec_reg_missing,
-        "mobile_recharge_avg_norm": norm_mobile_avg,
+        "mobile_recharge_amount_norm": norm_mobile_avg,
         "mobile_recharge_frequency_norm": norm_mobile_freq,
         "utility_payment_consistency": util_cons,
         "util_cons_missing": util_cons_missing,

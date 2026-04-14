@@ -3,8 +3,13 @@ import numpy as np
 import os
 import pickle
 
+# Load models directory from env or use default
+MODELS_DIR = os.getenv("MODEL_DIR", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "models"))
+
+if not os.path.exists(MODELS_DIR):
+    MODELS_DIR = os.path.join(os.getcwd(), "models")
+
 # Load Model B at module level
-MODELS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "models")
 with open(os.path.join(MODELS_DIR, "model_b_income.pkl"), "rb") as f:
     model_b = pickle.load(f)
 
@@ -47,7 +52,7 @@ def compute_alternative_credit_score(row, norm_data, engineered_features):
     
     b_features = [
         norm_data["electricity_bill_avg_norm"] if norm_data["electricity_bill_avg_norm"] is not None else 0.5, # mean impute
-        norm_data["mobile_recharge_avg_norm"] if norm_data["mobile_recharge_avg_norm"] is not None else 0.5,
+        norm_data["mobile_recharge_amount_norm"] if norm_data["mobile_recharge_amount_norm"] is not None else 0.5,
         norm_data["mobile_recharge_frequency_norm"] if norm_data["mobile_recharge_frequency_norm"] is not None else 1.0,
         norm_data["govt_category_encoded"],
         np.log1p(row.get("applicant_income", 0)),
@@ -63,7 +68,7 @@ def compute_alternative_credit_score(row, norm_data, engineered_features):
     # Missing data penalties for Model B
     score_b_multiplier = 1.0
     if norm_data["electricity_bill_avg_norm"] is None: score_b_multiplier *= 0.85
-    if norm_data["mobile_recharge_avg_norm"] is None: score_b_multiplier *= 0.90
+    if norm_data["mobile_recharge_amount_norm"] is None: score_b_multiplier *= 0.90
     if norm_data["mobile_recharge_frequency_norm"] is None: score_b_multiplier *= 0.90
     
     score_b = max(0, min(100, score_b_raw * score_b_multiplier))
