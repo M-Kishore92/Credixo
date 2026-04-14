@@ -12,7 +12,12 @@ export default function LoginPage() {
   const toast = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    defaultValues: {
+      officer_id: 'agent@example.com',
+      password: 'password-12345'
+    }
+  });
 
   const onSubmit = async (data) => {
     setLoading(true);

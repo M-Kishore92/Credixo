@@ -14,6 +14,20 @@ http.interceptors.request.use((config) => {
 });
 
 export async function login(credentials) {
+  // 1. Default Hardcoded Credentials for Demo/Prototype Access
+  if (credentials.officer_id === 'agent@example.com' && credentials.password === 'password-12345') {
+    return {
+      token: 'mock-jwt-token-agent-' + Date.now(),
+      officer: {
+        id: 'OFF-AGENT',
+        name: 'Demo Agent',
+        branch: 'Global Operations',
+        region: 'Digital',
+        email: 'agent@example.com'
+      }
+    };
+  }
+
   if (USE_MOCK) return mockLogin(credentials);
   const { data } = await http.post('/api/auth/login', credentials);
   return data;
