@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { FileCheck, AlertTriangle } from 'lucide-react';
 import DocumentSlot from '../ui/DocumentSlot';
+import DocumentSummaryBar from '../ui/DocumentSummaryBar';
 
 const DOCUMENT_CONFIGS = [
   {
@@ -58,11 +58,23 @@ const DOCUMENT_CONFIGS = [
   },
 ];
 
+const TRACKED_FIELDS = [
+  { name: 'electricity_bill_avg', label: 'electricity bill' },
+  { name: 'govt_socioeconomic_category', label: 'ration card' },
+  { name: 'prior_repayment_record', label: 'bank passbook' },
+  { name: 'electricity_payment_regularity', label: 'elec. regularity' },
+  { name: 'utility_payment_consistency', label: 'utility consistency' },
+  { name: 'applicant_income', label: 'income proof' },
+  { name: 'coapplicant_income', label: 'co-applicant proof' },
+];
+
 export default function SectionDocuments({ register, errors, watch, setValue }) {
-  const docsAvailable = DOCUMENT_CONFIGS.filter((d) => {
-    const val = watch?.(`${d.prefix}.available`);
-    return val === true || val === 'true';
-  }).length;
+  const fieldStatuses = TRACKED_FIELDS.map(f => ({
+    ...f,
+    uploaded: !!watch(`source_${f.name}`)
+  }));
+
+  const uploadedCount = fieldStatuses.filter(f => f.uploaded).length;
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -71,33 +83,15 @@ export default function SectionDocuments({ register, errors, watch, setValue }) 
         Upload available documents to strengthen the application
       </p>
 
-      {/* Document Summary Bar */}
-      <div style={{
-        padding: '14px 20px',
-        borderRadius: 14,
-        marginBottom: 24,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        background: docsAvailable >= 3 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
-        border: `1px solid ${docsAvailable >= 3 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
-      }}>
-        {docsAvailable >= 3 ? (
-          <FileCheck size={20} style={{ color: 'var(--color-success)' }} />
-        ) : (
-          <AlertTriangle size={20} style={{ color: 'var(--color-warning)' }} />
-        )}
-        <div>
-          <p style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0, color: docsAvailable >= 3 ? '#065F46' : '#92400E' }}>
-            {docsAvailable} of 6 documents submitted
-          </p>
-          <p style={{ fontSize: '0.8rem', margin: '2px 0 0', color: docsAvailable >= 3 ? '#065F46' : '#92400E', opacity: 0.8 }}>
-            {docsAvailable >= 3
-              ? 'Good document coverage'
-              : 'Low document coverage — application will be routed to Human Review'}
-          </p>
-        </div>
-      </div>
+      <DocumentSummaryBar
+        uploadedCount={uploadedCount}
+        totalFields={TRACKED_FIELDS.length}
+        fieldStatuses={fieldStatuses}
+      />
+
+      <h3 style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', fontWeight: 700, marginBottom: 16 }}>
+        Physical File Attachments (Optional)
+      </h3>
 
       {/* Document Slots */}
       {DOCUMENT_CONFIGS.map((doc) => (

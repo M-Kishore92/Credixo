@@ -68,6 +68,19 @@ function generateApplication(index) {
       loan_amount_ratio: -(Math.random() * 0.1).toFixed(2),
     },
     documents_submitted: randomBetween(2, 6),
+    prior_repayment_record: null,
+    coapplicant_income: 0,
+    dependents: 2,
+    data_sources_used: {
+      electricity_bill_avg: "manual",
+      electricity_payment_regularity: "manual",
+      utility_payment_consistency: "manual",
+      prior_repayment_record: "not_provided",
+      govt_socioeconomic_category: "manual",
+      applicant_income: "manual",
+      coapplicant_income: "not_provided",
+      dependents: "manual"
+    }
   };
 }
 
@@ -100,6 +113,24 @@ export async function mockPredict(formData) {
   const behaviorScore = randomBetween(Math.max(20, score - 10), Math.min(100, score + 10));
   const incomeScore = randomBetween(Math.max(20, score - 15), Math.min(100, score + 8));
 
+  // Determine data sources used
+  const fields = [
+    'electricity_bill_avg', 'electricity_payment_regularity', 'utility_payment_consistency',
+    'prior_repayment_record', 'govt_socioeconomic_category', 'applicant_income',
+    'coapplicant_income', 'dependents'
+  ];
+
+  const data_sources_used = {};
+  fields.forEach(f => {
+    if (formData[`source_${f}`] === 'document') {
+      data_sources_used[f] = 'document';
+    } else if (formData[f] !== undefined && formData[f] !== '' && formData[f] !== null && formData[f] !== 0) {
+      data_sources_used[f] = 'manual';
+    } else {
+      data_sources_used[f] = 'not_provided';
+    }
+  });
+
   return {
     application_id: `APP-2025-${String(randomBetween(100, 999)).padStart(4, '0')}`,
     decision,
@@ -128,13 +159,15 @@ export async function mockPredict(formData) {
       'Monthly Income': +(Math.random() * 0.12).toFixed(2),
       'Loan Amount Ratio': -(Math.random() * 0.1).toFixed(2),
     },
+    data_sources_used,
+    // Keep backward compatibility for ScoreExplainerPage old version
     data_sources: {
-      electricity: Math.random() > 0.2,
-      mobile: Math.random() > 0.3,
-      utility: Math.random() > 0.25,
-      repayment: Math.random() > 0.4,
-      govt_survey: Math.random() > 0.5,
-    },
+      electricity: true,
+      mobile: true,
+      utility: true,
+      repayment: true,
+      govt_survey: true,
+    }
   };
 }
 
@@ -195,18 +228,18 @@ export async function mockGetApplication(id) {
       ...app,
       marital_status: 'Married',
       education: 'Secondary',
-      monthly_income: randomBetween(8000, 45000),
-      co_applicant_income: randomBetween(0, 15000),
+      applicant_income: randomBetween(8000, 45000),
+      coapplicant_income: randomBetween(0, 15000),
       dependents: randomBetween(0, 5),
       loan_purpose: 'Agriculture',
       credit_score_category: 'None',
-      prior_repayment: 'No prior loans',
-      electricity_bill: randomBetween(200, 2000),
-      electricity_regularity: 'Usually on time',
+      prior_repayment_record: null,
+      electricity_bill_avg: randomBetween(200, 2000),
+      electricity_payment_regularity: '0.8',
       mobile_recharge_amount: randomBetween(100, 800),
       mobile_recharge_frequency: randomBetween(1, 8),
-      utility_consistency: 'Always',
-      govt_category: 'BPL',
+      utility_payment_consistency: '1.0',
+      govt_socioeconomic_category: 'BPL',
       documents: [
         { name: 'Electricity Bill', available: true },
         { name: 'No Income Certificate', available: false },

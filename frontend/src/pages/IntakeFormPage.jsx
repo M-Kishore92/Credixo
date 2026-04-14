@@ -26,10 +26,10 @@ const STEPS = [
 
 const STEP_FIELDS = [
   ['full_name', 'age', 'gender', 'marital_status', 'education'],
-  ['employment_type', 'monthly_income', 'area_type'],
+  ['employment_type', 'applicant_income', 'coapplicant_income', 'dependents', 'area_type'],
   ['loan_amount', 'loan_term', 'loan_purpose'],
-  [],
-  [],
+  ['credit_score_category', 'prior_repayment_record'],
+  ['electricity_bill_avg', 'electricity_payment_regularity', 'mobile_recharge_amount', 'mobile_recharge_frequency', 'utility_payment_consistency', 'govt_socioeconomic_category'],
   [],
 ];
 

@@ -203,29 +203,51 @@ export default function ScoreExplainerPage() {
         >
           <GlassCard hover={false} style={{ padding: '28px', marginBottom: 28 }}>
             <h3 style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', fontWeight: 700, marginBottom: 16 }}>
-              Data Source Status
+              Alternative Data Trace (Evidence Log)
             </h3>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              {Object.entries(result.data_sources || {}).map(([key, available]) => (
-                <div key={key} style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 16px', borderRadius: 999,
-                  background: available ? 'rgba(16, 185, 129, 0.08)' : 'rgba(148, 163, 184, 0.1)',
-                  border: `1px solid ${available ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.2)'}`,
-                }}>
-                  {available ? (
-                    <Check size={14} style={{ color: 'var(--color-success)' }} />
-                  ) : (
-                    <X size={14} style={{ color: 'var(--color-text-muted)' }} />
-                  )}
-                  <span style={{
-                    fontSize: '0.85rem', fontWeight: 500,
-                    color: available ? '#065F46' : 'var(--color-text-muted)',
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {Object.entries(result.data_sources_used || {}).map(([key, status]) => {
+                const labelMap = {
+                  electricity_bill_avg: 'Electricity bill amount',
+                  electricity_payment_regularity: 'Electricity payment regularity',
+                  utility_payment_consistency: 'Utility payment consistency',
+                  mobile_recharge_amount: 'Mobile recharge amount',
+                  mobile_recharge_frequency: 'Mobile recharge frequency',
+                  govt_socioeconomic_category: 'Government category',
+                  prior_repayment_record: 'Prior repayment record',
+                  coapplicant_income: 'Co-applicant income',
+                };
+
+                const isDoc = status === 'document';
+                const isManual = status === 'manual';
+                const isSkip = status === 'not_provided';
+
+                const bg = isDoc ? 'rgba(16, 185, 129, 0.08)' : isManual ? 'rgba(91, 110, 232, 0.08)' : 'rgba(148, 163, 184, 0.1)';
+                const border = isDoc ? 'rgba(16, 185, 129, 0.2)' : isManual ? 'rgba(91, 110, 232, 0.2)' : 'rgba(148, 163, 184, 0.2)';
+                const color = isDoc ? '#065F46' : isManual ? 'var(--color-primary)' : 'var(--color-text-muted)';
+
+                return (
+                  <div key={key} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 16px', borderRadius: 12,
+                    background: bg, border: `1px solid ${border}`,
                   }}>
-                    {dataSourceLabels[key] || key}
-                  </span>
-                </div>
-              ))}
+                    <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-secondary)' }}>
+                      {labelMap[key] || key}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {isDoc ? (
+                        <Check size={14} style={{ color: 'var(--color-success)' }} />
+                      ) : isSkip? (
+                        <X size={14} style={{ color: 'var(--color-text-muted)' }} />
+                      ) : null }
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color, textTransform: 'uppercase' }}>
+                        {isDoc ? 'Document ✓' : isManual ? 'Manual entry' : 'Not provided'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </GlassCard>
         </motion.div>
