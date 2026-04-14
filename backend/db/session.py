@@ -1,6 +1,5 @@
 # backend/db/session.py
 import os
-from sqlalchemy import create_all
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
