@@ -50,6 +50,10 @@ def on_startup():
 def health_check():
     return {"status": "ok"}
 
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "Credixo API is running"}
+
 # 5. Include Routers
 app.include_router(predict.router, prefix="/api", tags=["prediction"])
 
