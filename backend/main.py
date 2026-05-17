@@ -1,6 +1,8 @@
 # backend/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 import uvicorn
 import os
 from api import predict
@@ -17,17 +19,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. Database Initialization on Startup
+# 2. Custom Exception Handler for Validation Errors
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = exc.errors()
+    print(f"[VALIDATION ERROR] {errors}")
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Validation failed",
+            "errors": [
+                {
+                    "field": ".".join(str(x) for x in error["loc"][1:]),
+                    "message": error["msg"],
+                    "type": error["type"],
+                }
+                for error in errors
+            ],
+        },
+    )
+
+# 3. Database Initialization on Startup (skipped when SKIP_DB_PERSISTENCE=true)
 @app.on_event("startup")
 def on_startup():
-    init_db()
+    if os.getenv("SKIP_DB_PERSISTENCE", "false").lower() != "true":
+        init_db()
 
-# 3. Health Check
+# 4. Health Check
 @app.get("/api/health")
 def health_check():
     return {"status": "ok"}
 
-# 4. Include Routers
+# 5. Include Routers
 app.include_router(predict.router, prefix="/api", tags=["prediction"])
 
 if __name__ == "__main__":

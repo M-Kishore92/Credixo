@@ -7,41 +7,92 @@ import GlassCard from '../components/ui/GlassCard';
 import ScoreGauge from '../components/ui/ScoreGauge';
 import { RiskBadge } from '../components/ui/Badge';
 import AlertBanner from '../components/ui/AlertBanner';
+import { getApplication } from '../api';
+import { useToast } from '../components/Toast';
 
 export default function ResultPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem('last_result');
-    if (stored) {
-      setResult(JSON.parse(stored));
-    } else {
-      // Generate fallback mock
-      setResult({
-        application_id: id,
-        decision: 'Approve',
-        alternative_credit_score: 82,
-        risk_band: 'Low Risk',
-        behavior_repayment_score: 87,
-        income_affordability_score: 74,
-        approval_probability: 0.79,
-        top_reason_1: 'Consistent electricity bill payments over 12 months',
-        top_reason_2: 'Regular mobile recharge pattern indicates stable income',
-        suggestions: ['Maintain regular utility payments', 'Continue consistent mobile recharge patterns'],
-        fairness_flag: false,
-      });
-    }
-  }, [id]);
+    const fetchResult = async () => {
+      try {
+        setLoading(true);
+        // Try to get from sessionStorage first (for immediate feedback after submission)
+        const stored = sessionStorage.getItem('last_result');
+        if (stored) {
+          setResult(JSON.parse(stored));
+          setLoading(false);
+          return;
+        }
+        
+        // Then fetch from backend
+        const data = await getApplication(id);
+        setResult({
+          application_id: data.application_id,
+          decision: data.decision,
+          alternative_credit_score: data.alternative_credit_score,
+          risk_band: data.risk_band,
+          behavior_repayment_score: data.behavior_repayment_score,
+          income_affordability_score: data.income_affordability_score,
+          approval_probability: data.approval_probability,
+          top_reason_1: data.top_reason_1,
+          top_reason_2: data.top_reason_2,
+          suggestions: data.suggestions || [],
+          fairness_flag: data.fairness_flag,
+          shap_top_features: data.shap_top_features || {},
+          debt_to_income: data.debt_to_income,
+          household_burden: data.household_burden,
+          employment_stability: data.employment_stability,
+          combined_score: data.combined_score,
+          ...data,
+        });
+      } catch (err) {
+        console.error('Failed to fetch application:', err);
+        toast.error('Failed to load application details');
+        // Don't set a fallback, let user see the error
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!result) {
+    if (id) {
+      fetchResult();
+    }
+  }, [id, toast]);
+
+  if (loading) {
     return (
       <div className="bg-gradient-page" style={{ minHeight: '100vh' }}>
         <Navbar />
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
           <div className="spinner spinner-dark" style={{ width: 40, height: 40 }} />
         </div>
+      </div>
+    );
+  }
+
+  if (!result) {
+    return (
+      <div className="bg-gradient-page" style={{ minHeight: '100vh' }}>
+        <Navbar />
+        <main style={{ maxWidth: 800, margin: '0 auto', padding: '32px 32px 64px', position: 'relative', zIndex: 1 }}>
+          <GlassCard>
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <p style={{ fontSize: '1.1rem', color: 'var(--color-text-muted)' }}>Application not found</p>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="btn btn-primary"
+                style={{ marginTop: '20px' }}
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          </GlassCard>
+        </main>
       </div>
     );
   }
@@ -163,6 +214,39 @@ export default function ResultPage() {
           </motion.div>
         </div>
 
+        {/* Documents Uploaded Summary */}
+        {result.data_sources_used && Object.keys(result.data_sources_used).length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            style={{ marginBottom: 24 }}
+          >
+            <GlassCard hover={false} style={{ padding: '28px', background: 'rgba(16, 185, 129, 0.04)', borderLeft: '4px solid #10B981' }}>
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', fontWeight: 700, marginBottom: 16, color: '#065F46' }}>
+                ✓ Documents Uploaded
+              </h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {Object.entries(result.data_sources_used).map(([field, source]) => (
+                  source !== 'not_provided' && (
+                    <span key={field} style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      padding: '6px 12px',
+                      borderRadius: 12,
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      color: '#065F46',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                    }}>
+                      {field.replace(/_/g, ' ')} {source === 'document' ? '📄' : '✋'}
+                    </span>
+                  )
+                ))}
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+
         {/* Fairness Flag */}
         {result.fairness_flag && (
           <motion.div
@@ -192,7 +276,15 @@ export default function ResultPage() {
           <Link to="/apply" className="btn btn-primary">
             <FilePlus size={18} /> Submit Another Application
           </Link>
-          <button className="btn btn-ghost">
+          <button 
+            onClick={() => {
+              sessionStorage.removeItem('intake_form_data');
+              sessionStorage.removeItem('last_result');
+              toast.success('Application saved to dashboard!');
+              navigate('/dashboard');
+            }}
+            className="btn btn-ghost"
+          >
             <Bookmark size={18} /> Save to Dashboard
           </button>
         </motion.div>

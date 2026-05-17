@@ -33,10 +33,32 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState('30');
   const perPage = 10;
 
+  // Function to fetch data
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [statsData, appsData] = await Promise.all([getDashboardStats(), getApplications()]);
+      setStats(statsData);
+      setApplications(appsData);
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch on mount
   useEffect(() => {
-    Promise.all([getDashboardStats(), getApplications()])
-      .then(([s, a]) => { setStats(s); setApplications(a); setLoading(false); })
-      .catch(() => setLoading(false));
+    fetchData();
+  }, []);
+
+  // Refetch when window gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchData();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   // Filter and sort
@@ -110,6 +132,9 @@ export default function DashboardPage() {
                 <option value="30">Last 30 days</option>
                 <option value="90">Last 90 days</option>
               </select>
+              <button onClick={fetchData} className="btn btn-ghost btn-sm">
+                <TrendingUp size={16} /> Refresh
+              </button>
               <button className="btn btn-ghost btn-sm">
                 <Download size={16} /> Export CSV
               </button>

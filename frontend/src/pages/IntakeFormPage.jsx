@@ -21,7 +21,6 @@ const STEPS = [
   'Loan Details',
   'Credit History',
   'Behavioral Signals',
-  'Documents',
 ];
 
 const STEP_FIELDS = [
@@ -29,8 +28,7 @@ const STEP_FIELDS = [
   ['employment_type', 'applicant_income', 'coapplicant_income', 'dependents', 'area_type'],
   ['loan_amount', 'loan_term', 'loan_purpose'],
   ['credit_score_category', 'prior_repayment_record'],
-  ['electricity_bill_avg', 'electricity_payment_regularity', 'mobile_recharge_amount', 'mobile_recharge_frequency', 'utility_payment_consistency', 'govt_socioeconomic_category'],
-  [],
+  ['mobile_recharge_frequency'], // Only basic validation required; other fields are optional
 ];
 
 const SESSION_KEY = 'intake_form_data';
@@ -81,13 +79,37 @@ export default function IntakeFormPage() {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const result = await predict({ ...data, application_id: appId });
+      // Convert numeric fields from strings to numbers
+      const processedData = {
+        ...data,
+        age: parseInt(data.age) || 0,
+        applicant_income: parseFloat(data.applicant_income) || 0,
+        coapplicant_income: parseFloat(data.coapplicant_income) || 0,
+        dependents: parseInt(data.dependents) || 0,
+        loan_amount: parseFloat(data.loan_amount) || 0,
+        loan_term: parseInt(data.loan_term) || 0,
+        electricity_bill_avg: data.electricity_bill_avg ? parseFloat(data.electricity_bill_avg) : null,
+        electricity_payment_regularity: data.electricity_payment_regularity ? parseFloat(data.electricity_payment_regularity) : null,
+        mobile_recharge_amount: data.mobile_recharge_amount ? parseFloat(data.mobile_recharge_amount) : null,
+        mobile_recharge_frequency: data.mobile_recharge_frequency ? parseFloat(data.mobile_recharge_frequency) : null,
+        utility_payment_consistency: data.utility_payment_consistency ? parseFloat(data.utility_payment_consistency) : null,
+        prior_repayment_record: data.prior_repayment_record ? parseFloat(data.prior_repayment_record) : null,
+        application_id: appId,
+      };
+      
+      const result = await predict(processedData);
       sessionStorage.removeItem(SESSION_KEY);
+      // Normalize field names: backend returns ai_decision, frontend uses decision
+      const normalizedResult = {
+        ...result,
+        decision: result.decision || result.ai_decision,
+      };
       // Store result for the result page
-      sessionStorage.setItem('last_result', JSON.stringify(result));
+      sessionStorage.setItem('last_result', JSON.stringify(normalizedResult));
       toast.success('Application submitted successfully!');
-      navigate(`/result/${result.application_id}`);
+      navigate(`/result/${normalizedResult.application_id}`);
     } catch (err) {
+      console.error('Submission error:', err);
       toast.error('Failed to submit application. Please try again.');
     } finally {
       setLoading(false);
@@ -102,7 +124,6 @@ export default function IntakeFormPage() {
       case 2: return <SectionLoanDetails {...props} />;
       case 3: return <SectionCreditHistory {...props} />;
       case 4: return <SectionBehavioralSignals {...props} />;
-      case 5: return <SectionDocuments {...props} />;
       default: return null;
     }
   };
@@ -111,13 +132,13 @@ export default function IntakeFormPage() {
     <div className="bg-gradient-page" style={{ minHeight: '100vh' }}>
       <Navbar />
 
-      <div style={{ display: 'flex', maxWidth: 1200, margin: '0 auto', padding: '32px', gap: 32, position: 'relative', zIndex: 1 }}>
+      <div style={{ display: 'flex', maxWidth: 1400, margin: '0 auto', padding: '32px', gap: 24, position: 'relative', zIndex: 1 }}>
         {/* Sidebar Stepper */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          style={{ width: 260, flexShrink: 0 }}
+          style={{ width: 240, flexShrink: 0 }}
         >
           <GlassCard hover={false} style={{ position: 'sticky', top: 96 }}>
             <StepIndicator steps={STEPS} currentStep={currentStep} />
@@ -214,6 +235,28 @@ export default function IntakeFormPage() {
             </form>
           </GlassCard>
         </div>
+
+        {/* Documents Sidebar (Always Visible) */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          style={{ width: 320, flexShrink: 0 }}
+        >
+          <GlassCard hover={false} style={{ position: 'sticky', top: 96, maxHeight: 'calc(100vh - 128px)', overflowY: 'auto' }}>
+            <div style={{ padding: '24px' }}>
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', marginBottom: 16, color: 'var(--color-text-primary)' }}>
+                📄 Documents
+              </h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: 16, lineHeight: 1.4 }}>
+                Upload documents anytime. This is optional — you can submit without them.
+              </p>
+              
+              {/* Documents Section Inside Sidebar */}
+              <SectionDocuments register={register} errors={errors} watch={watch} setValue={setValue} />
+            </div>
+          </GlassCard>
+        </motion.div>
       </div>
     </div>
   );

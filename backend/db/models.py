@@ -1,6 +1,6 @@
 # backend/db/models.py
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, JSON
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 import uuid
 from datetime import datetime
 
@@ -11,6 +11,9 @@ class LoanApplication(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Applicant Name
+    full_name = Column(String, nullable=True)
     
     # Inputs
     gender = Column(String)

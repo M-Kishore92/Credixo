@@ -1,5 +1,6 @@
 # backend/pipeline/fairness.py
 import pandas as pd
+from datetime import datetime, timedelta
 from sqlalchemy import text
 from db.session import engine
 
@@ -8,14 +9,15 @@ def audit_fairness(current_application, current_acs):
     Performs a post-decision group-level fairness audit based on historical data.
     """
     try:
-        # 1. Query PostgreSQL for last 30 days
+        # 1. Query database for last 30 days (works with both SQLite and PostgreSQL)
+        cutoff = (datetime.utcnow() - timedelta(days=30)).isoformat()
         with engine.connect() as conn:
             query = text("""
                 SELECT gender, area_type, alternative_credit_score, ai_decision 
                 FROM loan_applications 
-                WHERE created_at > NOW() - INTERVAL '30 days'
+                WHERE created_at > :cutoff
             """)
-            df = pd.read_sql(query, conn)
+            df = pd.read_sql(query, conn, params={"cutoff": cutoff})
             
         if len(df) < 50:
             return {"fairness_flag": False, "fairness_detail": None}

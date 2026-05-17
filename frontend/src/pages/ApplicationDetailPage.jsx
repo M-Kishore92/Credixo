@@ -34,7 +34,8 @@ export default function ApplicationDetailPage() {
     }
     setSubmitting(true);
     try {
-      await submitOverride(id, { decision: overrideDecision, notes: overrideNotes });
+      const officer = JSON.parse(localStorage.getItem('officer') || '{}');
+      await submitOverride(id, { officer_decision: overrideDecision, officer_id: officer.id || 'UNKNOWN', notes: overrideNotes });
       toast.success('Override submitted successfully.');
       setApp((prev) => ({
         ...prev,
@@ -59,11 +60,11 @@ export default function ApplicationDetailPage() {
   }
 
   const behavioralSignals = [
-    { label: 'Electricity Bill', value: `₹${app.electricity_bill || 'N/A'}`, pct: Math.min(100, (app.electricity_bill || 0) / 20) },
-    { label: 'Electricity Regularity', value: app.electricity_regularity || 'N/A', pct: 80 },
+    { label: 'Electricity Bill', value: `₹${app.electricity_bill_avg || 'N/A'}`, pct: Math.min(100, (app.electricity_bill_avg || 0) / 20) },
+    { label: 'Electricity Regularity', value: app.electricity_payment_regularity || 'N/A', pct: Math.min(100, (parseFloat(app.electricity_payment_regularity) || 0) * 100) },
     { label: 'Mobile Recharge', value: `₹${app.mobile_recharge_amount || 'N/A'}`, pct: Math.min(100, (app.mobile_recharge_amount || 0) / 8) },
     { label: 'Mobile Frequency', value: `${app.mobile_recharge_frequency || 'N/A'}/mo`, pct: Math.min(100, (app.mobile_recharge_frequency || 0) * 15) },
-    { label: 'Utility Consistency', value: app.utility_consistency || 'N/A', pct: 85 },
+    { label: 'Utility Consistency', value: app.utility_payment_consistency || 'N/A', pct: Math.min(100, (parseFloat(app.utility_payment_consistency) || 0) * 100) },
   ];
 
   return (
@@ -105,8 +106,8 @@ export default function ApplicationDetailPage() {
                     ['Marital Status', app.marital_status],
                     ['Education', app.education],
                     ['Employment', app.employment_type],
-                    ['Monthly Income', `₹${(app.monthly_income || 0).toLocaleString()}`],
-                    ['Co-applicant Income', `₹${(app.co_applicant_income || 0).toLocaleString()}`],
+                    ['Monthly Income', `₹${(app.applicant_income || 0).toLocaleString()}`],
+                    ['Co-applicant Income', `₹${(app.coapplicant_income || 0).toLocaleString()}`],
                     ['Dependents', app.dependents],
                     ['Area Type', app.area_type],
                     ['Loan Amount', `₹${(app.loan_amount || 0).toLocaleString()}`],
