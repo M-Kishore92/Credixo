@@ -13,6 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 COPY models/ /models/
 
+# Ensure models directory exists for container
+RUN mkdir -p /models
+
 ENV MODEL_DIR=/models
 
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
