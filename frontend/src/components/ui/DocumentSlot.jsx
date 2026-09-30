@@ -38,14 +38,14 @@ export default function DocumentSlot({ docName, description, paramFields = [], r
       transition: 'all 0.3s ease',
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-        <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 min-content', minWidth: 150 }}>
           <h4 style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>{docName}</h4>
           {description && <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>{description}</p>}
         </div>
 
         {/* Radio toggle */}
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
           <label style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 999,
             cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,

@@ -48,7 +48,7 @@ export default function Navbar() {
             fontSize: '0.95rem',
             color: 'var(--color-text-primary)',
           }}>
-            AIML Financial Intelligence
+            CREDIXO
           </span>
         </Link>
       </div>
