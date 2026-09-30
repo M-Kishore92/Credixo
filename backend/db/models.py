@@ -48,6 +48,12 @@ class LoanApplication(Base):
     income_affordability_score = Column(Float)
     alternative_credit_score = Column(Float)
     risk_band = Column(String)
+    scoring_mode = Column(String, default="trained_model")
+    model_b_label = Column(String, default="estimated, not verified")
+    data_completeness_pct = Column(Float, default=100.0)
+    income_verification_source = Column(String, default="self_reported")
+    verification_sources_json = Column(JSON, nullable=True)
+    majority_self_reported = Column(Boolean, default=True)
     
     lr_score = Column(Float)
     xgb_score = Column(Float)
@@ -68,3 +74,23 @@ class LoanApplication(Base):
     officer_decision = Column(String, nullable=True)
     officer_id = Column(String, nullable=True)
     data_sources_used = Column(JSON, nullable=True)
+    
+    # RBI Regulatory Compliance (Digital Lending Directions 2026)
+    kfs_json = Column(JSON, nullable=True)
+    cooling_off_expiry = Column(DateTime, nullable=True)
+    grievance_officer_id = Column(String, default="GRO-MUM-2025-01")
+    grievance_officer_name = Column(String, default="Anita Sharma (Principal Grievance Redressal Officer)")
+    grievance_officer_email = Column(String, default="grievance.officer@credixo.in")
+    grievance_sla_days = Column(Integer, default=30)
+    
+    # DPDP Act 2025 Compliance
+    dpdp_consent_id = Column(String, nullable=True)
+    dpdp_consent_purpose = Column(String, default="Credit Underwriting & KYC Verification")
+    
+    # Adverse Decision Appeals
+    appeal_status = Column(String, default=None)
+    appeal_reason = Column(String, nullable=True)
+    appeal_documents_json = Column(JSON, nullable=True)
+    appeal_response_json = Column(JSON, nullable=True)
+
+

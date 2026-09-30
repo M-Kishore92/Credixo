@@ -51,6 +51,15 @@ export async function getDashboardStats() {
   return data;
 }
 
+export async function getFairnessAudit(trailingDays = 30) {
+  if (USE_MOCK) {
+    const stats = await mockDashboardStats();
+    return stats.fairness_audit;
+  }
+  const { data } = await http.get(`/api/fairness/audit?trailing_days=${trailingDays}`);
+  return data;
+}
+
 export async function getApplications() {
   if (USE_MOCK) return mockApplications();
   const { data } = await http.get('/api/applications');
@@ -68,3 +77,4 @@ export async function submitOverride(id, payload) {
   const { data } = await http.post(`/api/decision/override`, { application_id: id, ...payload });
   return data;
 }
+

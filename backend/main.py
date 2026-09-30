@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 import uvicorn
 import os
-from api import predict
+from api import predict, appeal
 from db.session import init_db
 
 app = FastAPI(title="Credixo — Smart Loan AI Backend")
@@ -56,6 +56,8 @@ def root():
 
 # 5. Include Routers
 app.include_router(predict.router, prefix="/api", tags=["prediction"])
+app.include_router(appeal.router, prefix="/api", tags=["appeal"])
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+

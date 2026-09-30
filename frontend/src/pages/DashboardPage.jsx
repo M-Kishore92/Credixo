@@ -141,6 +141,47 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Drift Fallback Alert Banner (when active) */}
+          {stats?.drift_fallback_active && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ marginBottom: 24 }}
+            >
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(245, 158, 11, 0.12))',
+                border: '1.5px solid rgba(239, 68, 68, 0.4)',
+                borderRadius: 16,
+                padding: '16px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+              }}>
+                <AlertTriangle size={24} color="#EF4444" style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '0.95rem', color: '#991B1B' }}>
+                    🚨 Automated Drift Fallback Mode Active
+                  </p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#7F1D1D', lineHeight: 1.5 }}>
+                    Statistical distribution drift has crossed the hard threshold ({stats?.drift_status?.trigger_reason || '>30% features drifting'}).
+                    All incoming applications are automatically routed to <strong>Human Review</strong> until a retrained, validated model is promoted.
+                  </p>
+                </div>
+                <span style={{
+                  padding: '6px 12px',
+                  borderRadius: 20,
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  color: '#991B1B',
+                  border: '1px solid rgba(239, 68, 68, 0.3)'
+                }}>
+                  SAFE HARBOR ROUTING
+                </span>
+              </div>
+            </motion.div>
+          )}
+
           {/* Dashboard Hero Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -205,11 +246,12 @@ export default function DashboardPage() {
               </div>
 
               {/* Floating cards */}
-              <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap', maxWidth: 460 }}>
                 {[
-                  { label: 'Approval Rate', value: `${stats?.approval_rate || 67.9}%`, rotate: -4 },
+                  { label: 'Approval Rate', value: `${stats?.approval_rate || 67.9}%`, rotate: -3 },
                   { label: 'Avg Score', value: stats?.avg_score || 67, rotate: 2 },
-                  { label: 'Fairness Flags', value: stats?.fairness_flags || 23, rotate: -2 },
+                  { label: 'Officer Override', value: `${stats?.override_rate_pct || '0.0'}%`, rotate: -2, highlight: true },
+                  { label: 'Fairness Flags', value: stats?.fairness_flags || 0, rotate: 1 },
                 ].map((card, i) => (
                   <motion.div
                     key={i}
@@ -217,11 +259,17 @@ export default function DashboardPage() {
                     animate={{ opacity: 1, y: 0, rotate: card.rotate }}
                     transition={{ delay: 0.3 + i * 0.1, type: 'spring' }}
                   >
-                    <GlassCard hover={false} style={{ padding: '20px', minWidth: 140, textAlign: 'center' }}>
-                      <p style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
+                    <GlassCard hover={false} style={{
+                      padding: '16px 20px',
+                      minWidth: 130,
+                      textAlign: 'center',
+                      background: card.highlight ? 'rgba(99, 102, 241, 0.08)' : undefined,
+                      border: card.highlight ? '1.5px solid rgba(99, 102, 241, 0.3)' : undefined
+                    }}>
+                      <p style={{ fontSize: '0.68rem', fontWeight: 700, color: card.highlight ? 'var(--color-primary)' : 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
                         {card.label}
                       </p>
-                      <p style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', color: 'var(--color-text-primary)' }}>
+                      <p style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: card.highlight ? 'var(--color-primary)' : 'var(--color-text-primary)', margin: 0 }}>
                         {card.value}
                       </p>
                     </GlassCard>
@@ -232,12 +280,14 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* Stats row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 32 }}>
             <StatCard label="Total Applications" value={stats?.total || 0} trend="+12%" trendDirection="up" icon={FileText} color="var(--color-primary)" delay={0} />
             <StatCard label="Approved" value={`${stats?.approved_pct || 0}%`} trend="+5%" trendDirection="up" icon={CheckCircle} color="var(--color-success)" delay={1} />
             <StatCard label="Human Review" value={`${stats?.human_review_pct || 0}%`} trend="-3%" trendDirection="down" icon={Clock} color="var(--color-warning)" delay={2} />
             <StatCard label="Rejected" value={`${stats?.rejected_pct || 0}%`} trend="-2%" trendDirection="down" icon={XCircle} color="var(--color-danger)" delay={3} />
+            <StatCard label="Officer Overrides" value={`${stats?.override_rate_pct || 0}% (${stats?.override_count || 0})`} trend="active learning" trendDirection="up" icon={Shield} color="#8B5CF6" delay={4} />
           </div>
+
 
           {/* Charts Row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 32 }}>
@@ -303,43 +353,146 @@ export default function DashboardPage() {
             </motion.div>
           </div>
 
-          {/* Fairness Heatmap */}
+          {/* Multi-Axis Demographic Fairness Audit Panel */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
             <GlassCard hover={false} style={{ padding: '28px', marginBottom: 32 }}>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', marginBottom: 20 }}>
-                Approval Rates by Demographic Group
-              </h3>
-              <div style={{ overflowX: 'auto' }}>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Gender</th>
-                      <th>Urban</th>
-                      <th>Semi-urban</th>
-                      <th>Rural</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats?.fairness_heatmap && Object.entries(stats.fairness_heatmap).map(([gender, areas]) => (
-                      <tr key={gender}>
-                        <td style={{ fontWeight: 600 }}>{gender}</td>
-                        {['Urban', 'Semi-urban', 'Rural'].map((area) => {
-                          const val = areas[area] || 0;
-                          const overall = stats.overall_approval_rate || 67.9;
-                          const deviation = Math.abs(val - overall);
-                          const isFlag = deviation > 10;
-                          const bg = val >= 70 ? 'rgba(16, 185, 129, 0.12)' : val >= 60 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(239, 68, 68, 0.12)';
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Shield size={22} style={{ color: 'var(--color-primary)' }} />
+                    <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', margin: 0 }}>
+                      Demographic Fairness & Parity Audit
+                    </h3>
+                  </div>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', marginTop: 4 }}>
+                    Rolling 30-day evaluation across all 4 collected demographic axes. Minimum subgroup floor: <strong style={{ color: 'var(--color-text-secondary)' }}>N ≥ 30</strong>.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    padding: '4px 12px',
+                    borderRadius: 20,
+                    background: stats?.fairness_audit?.fairness_flag ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
+                    color: stats?.fairness_audit?.fairness_flag ? '#EF4444' : '#10B981',
+                    border: `1px solid ${stats?.fairness_audit?.fairness_flag ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'}`
+                  }}>
+                    {stats?.fairness_audit?.fairness_flag ? '⚠️ Disparity Flagged' : '✓ All Monitored Axes Compliant'}
+                  </span>
+                </div>
+              </div>
+
+              {/* 4 Demographic Axes Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+                {stats?.fairness_audit?.axes && Object.entries(stats.fairness_audit.axes).map(([axisKey, axisData]) => {
+                  const axisTitles = {
+                    gender: 'Gender',
+                    area_type: 'Area Type',
+                    education: 'Education Level',
+                    employment_type: 'Employment Type'
+                  };
+                  const title = axisTitles[axisKey] || axisKey;
+                  const isAssessed = axisData.status === 'assessed';
+                  const dpd = axisData.demographic_parity_difference;
+                  const eod = axisData.equal_opportunity_difference;
+
+                  return (
+                    <div
+                      key={axisKey}
+                      style={{
+                        background: 'var(--color-surface)',
+                        borderRadius: 16,
+                        padding: 20,
+                        border: `1px solid ${axisData.disparity_flag ? 'rgba(239,68,68,0.3)' : 'var(--color-border)'}`,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', margin: 0, color: 'var(--color-text-primary)' }}>
+                          {title}
+                        </h4>
+                        <span style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 600,
+                          padding: '2px 8px',
+                          borderRadius: 6,
+                          background: axisData.disparity_flag ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
+                          color: axisData.disparity_flag ? '#EF4444' : '#10B981',
+                        }}>
+                          {isAssessed ? (axisData.disparity_flag ? 'Disparity > 10pp' : 'Compliant') : 'Floor N < 30'}
+                        </span>
+                      </div>
+
+                      {/* Parity Metrics */}
+                      <div style={{ display: 'flex', gap: 12, marginBottom: 14, background: 'rgba(99,102,241,0.04)', padding: '8px 12px', borderRadius: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>DPD (Demographic Parity)</div>
+                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', fontWeight: 700, color: dpd > 10 ? '#EF4444' : 'var(--color-text-primary)' }}>
+                            {dpd !== null ? `${dpd}%` : 'N/A'}
+                          </div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>EOD (Equal Opp)</div>
+                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', fontWeight: 700, color: eod > 10 ? '#EF4444' : 'var(--color-text-primary)' }}>
+                            {eod !== null ? `${eod}%` : 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Subgroups breakdown */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {axisData.subgroups && Object.entries(axisData.subgroups).map(([subName, subInfo]) => {
+                          const isFloorSuppressed = subInfo.status === 'insufficient_data';
                           return (
-                            <td key={area} style={{ background: isFlag ? 'rgba(245, 158, 11, 0.15)' : bg, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                              {val}%
-                              {isFlag && <AlertTriangle size={13} style={{ marginLeft: 6, color: 'var(--color-warning)' }} />}
-                            </td>
+                            <div
+                              key={subName}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                fontSize: '0.8rem',
+                                padding: '6px 10px',
+                                borderRadius: 8,
+                                background: isFloorSuppressed ? 'rgba(148,163,184,0.08)' : 'rgba(255,255,255,0.03)',
+                                border: '1px solid var(--color-border)'
+                              }}
+                            >
+                              <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{subName}</span>
+
+                              {isFloorSuppressed ? (
+                                <span style={{
+                                  fontSize: '0.72rem',
+                                  color: 'var(--color-text-muted)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4
+                                }}>
+                                  <AlertTriangle size={12} style={{ color: '#F59E0B' }} />
+                                  Insufficient data (N = {subInfo.sample_size} &lt; 30)
+                                </span>
+                              ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                                    N={subInfo.sample_size}
+                                  </span>
+                                  <span style={{
+                                    fontFamily: 'var(--font-mono)',
+                                    fontWeight: 700,
+                                    color: subInfo.approval_rate >= 70 ? '#10B981' : subInfo.approval_rate >= 60 ? '#F59E0B' : '#EF4444'
+                                  }}>
+                                    {subInfo.approval_rate}%
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           );
                         })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </GlassCard>
           </motion.div>

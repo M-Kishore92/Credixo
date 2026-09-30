@@ -55,3 +55,18 @@ def normalize_behavioral_signals(data):
         "util_cons_missing": util_cons_missing,
         "govt_category_encoded": govt_cat_encoded
     }
+
+def compute_data_completeness(data):
+    """
+    Computes data completeness percentage across all tracking and behavioral input fields.
+    """
+    tracked_fields = [
+        "applicant_income", "loan_amount", "loan_term", "employment_type",
+        "area_type", "age", "gender", "marital_status", "education",
+        "electricity_bill_avg", "electricity_payment_regularity",
+        "mobile_recharge_amount", "mobile_recharge_frequency",
+        "utility_payment_consistency", "prior_repayment_record"
+    ]
+    present_count = sum(1 for f in tracked_fields if data.get(f) is not None and data.get(f) != "")
+    return round((present_count / len(tracked_fields)) * 100.0, 1)
+
